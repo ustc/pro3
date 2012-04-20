@@ -111,9 +111,21 @@ void draw() {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.35,0.35,0.35,0.0);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D,1);
-
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,2);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D,3);
+/*
+	GLUquadric *gpt = gluNewQuadric();
+  	gluQuadricTexture(gpt, 1);
+	gluQuadricOrientation(gpt,GLU_INSIDE);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,3);
+	glEnable(GL_TEXTURE_2D);
+	gluSphere(gpt, 40.0, 64, 64);
+*/
   glBegin(GL_QUADS);
   for (unsigned int i=0; i<pface.size(); i++) {
     for (unsigned int j=0; j<4; j++) {
@@ -146,7 +158,7 @@ void view_volume()
 {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0,1.0,1.0,20.0);
+	gluPerspective(45.0,1.0,1.0,50.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(eye[0],eye[1],eye[2],viewpt[0],viewpt[1],viewpt[2],up[0],up[1],up[2]);
@@ -175,8 +187,9 @@ unsigned int set_shaders() {
 	v = glCreateShader(GL_VERTEX_SHADER);
 	f = glCreateShader(GL_FRAGMENT_SHADER);
  	vs = read_shader_program("phong_teatex.vert");
- 	fs = read_shader_program("phong_teapot.frag");
+ 	//fs = read_shader_program("phong_Nmap.frag");
  	//fs = read_shader_program("phong_teatex.frag");
+ 	fs = read_shader_program("phong.frag");
 	glShaderSource(v,1, (const char**)&vs, NULL);	
 	glShaderSource(f,1, (const char**)&fs, NULL);	
 	free(vs);
@@ -228,16 +241,16 @@ void do_material() {
 
 void set_material()
 { 
-  float mat_ambient[] = {0.00, 0.00, 0.00};
+/*  float mat_ambient[] = {0.00, 0.00, 0.00};
   float mat_diffuse[] = {1.00, 0.80, 0.70};
   float mat_specular[] = {0.15, 0.15, 0.15};
   float mat_shininess[] = {60.0};
-/*  
-	float mat_diffuse[] = {0.5,0.5,0.5,1.0};
-	float mat_specular[] = {0.6,0.6,0.6,1.0};
+*/ 
+	float mat_diffuse[] = {0.8, 0.7,0.2,1.0};
+	float mat_specular[] = {1.0,1.0,1.0,1.0};
 	float mat_shininess[] = {20.0};
-*/
-  glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+
+//  glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
   glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
   glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
   glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
@@ -285,8 +298,13 @@ void set_uniform(int p)
 	int location;
 	location = glGetUniformLocation(p,"mytexture");
 	glUniform1i(location,0);
+	cout<<"mytexture: "<<location<<endl;
 	location = glGetUniformLocation(p,"mynormalmap");
 	glUniform1i(location,1);
+	cout<<"mynormalmap: "<<location<<endl;
+	location = glGetUniformLocation(p,"background");
+	glUniform1i(location,2);
+	cout<<"background: "<<location<<endl;
 }
 
 int main (int argc, char**argv) {
@@ -299,10 +317,17 @@ int main (int argc, char**argv) {
 	glutInitWindowSize(512,512);
 	glutInitWindowPosition(100,50);
 	glutCreateWindow("my_cool_teapot");        
+
 	glActiveTexture(GL_TEXTURE0);
-	load_texture("bubble_color.ppm", 1);
+	//load_texture("bubble_color.ppm", 1);
+	load_texture("lenna.ppm", 1);
+
 	glActiveTexture(GL_TEXTURE1);
 	load_texture("fieldstoneN.ppm", 2);
+
+	glActiveTexture(GL_TEXTURE2);
+	load_texture("background.ppm", 3);
+
  	//glEnable(GL_DEPTH_TEST);
 	//do_viewvolume();
 	//do_lights();
