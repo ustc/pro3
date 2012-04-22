@@ -1,9 +1,9 @@
 
-CXX = g++
-#CXX = clang
+#CXX = g++
+CXX = clang
 
 # Warnings frequently signal eventual errors:
-CXXFLAGS= -g -W -Wall -Wextra -pedantic -O0 
+CXXFLAGS= -g -W -Wall -Wextra -pedantic -O0  
 
 ifeq ("$(shell uname)", "Darwin")
   LDFLAGS =
