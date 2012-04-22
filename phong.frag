@@ -1,8 +1,8 @@
 varying vec3 ec_vnormal, ec_vposition, ec_vtangent, ec_vbitangent;
-uniform sampler2D mytexture;
-uniform sampler2D mynormalmap;
 uniform sampler2D background;
 uniform sampler2D myenvmap;
+uniform sampler2D mytexture;
+uniform sampler2D mynormalmap;
 
 void main() 
 {
@@ -10,8 +10,12 @@ void main()
 	vec4 d_irr, s_irr,t_color;
 	vec3 P, N, L, V, H, R, mapN;
 	mat3 tform;
-	vec4 diffuse_color = gl_FrontMaterial.diffuse;
-	vec4 specular_color = gl_FrontMaterial.specular;
+	//~ vec4 ambient_color = gl_FrontMaterial.ambient;
+	//~ vec4 diffuse_color = gl_FrontMaterial.diffuse;
+	//~ vec4 specular_color = gl_FrontMaterial.specular;
+	vec4 ambient_color = gl_FrontLightProduct[0].ambient;
+	vec4 diffuse_color = gl_FrontLightProduct[0].diffuse;
+	vec4 specular_color = gl_FrontLightProduct[0].specular;
 	float shininess = gl_FrontMaterial.shininess;
 	P = ec_vposition;
 	N = normalize(ec_vnormal);
@@ -31,13 +35,13 @@ void main()
                    -vec3(1.0, 1.0, 1.0));
     tform = mat3(normalize(ec_vtangent), normalize(ec_vbitangent),
               N);
-    //N = normalize(tform*mapN);
+    N = normalize(tform*mapN);
     
     t_color = vec4(texture2D(mytexture,  gl_TexCoord[0].st), 1.0);
     diffuse_color = 0.5*diffuse_color+0.5*t_color;
-	diffuse_color = t_color;
+	//diffuse_color = t_color;
 	diffuse_color *= max(dot(N,L), 0.0)*d_irr;
 	specular_color *= pow(max(dot(H,N), 0.0), shininess)*s_irr;
 	
-	gl_FragColor = diffuse_color + specular_color;
+	gl_FragColor = ambient_color + diffuse_color + specular_color;
 }
