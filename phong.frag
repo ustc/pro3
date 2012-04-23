@@ -38,7 +38,7 @@ void main()
     N = normalize(tform*mapN);
     
     t_color = vec4(texture2D(mytexture,  gl_TexCoord[0].st), 1.0);
-    diffuse_color = 0.5*diffuse_color+0.5*t_color;
+    //diffuse_color = 0.5*diffuse_color+0.5*t_color;
 	//diffuse_color = t_color;
 	diffuse_color *= max(dot(N,L), 0.0)*d_irr;
 	specular_color *= pow(max(dot(H,N), 0.0), shininess)*s_irr;

@@ -34,11 +34,12 @@ int index_bitangent;
 
 int p;
 
-float eye[] = {0.0, 2.0, 4.0};
+float eye[] = {0.0, 2.5, 4.0};
 float viewpt[] = {0.0, 0.0, 0.0};
 float up[] = {0.0, 1.0, 0.0};
 
-float light0_position[] = {5.0, 2.0, 5.0, 1.0};
+float light0_position[] = {5.0, 2.0-0.02, 5.0, 1.0};
+float light0_position_r[] = {5.0, -2.0-0.02, 5.0, 1.0};
 
 vector<struct point> vpos; 
 vector<struct point> vn; 
@@ -114,7 +115,45 @@ char  *read_shader_program(const char* filename) {
 	return content;
 }
 
+void load_texture(char* filename, int tid, int p=0) {
+	FILE* fptr;
+	char buf[512], *parse;
+	int im_size, im_width, im_height, max_color;
+	unsigned char* texture_bytes;
+	fptr=fopen(filename, "r");
+	if (fptr==NULL) cout<<"fptr_NULL"<<endl;
+	fgets(buf,512,fptr);
+	do {    	
+		fgets(buf,512,fptr);
+	} while (buf[0]=='#');
+	if (buf==NULL) cout<<"buf_NULL"<<endl;
+	parse = strtok(buf, " \t");
+	im_width = atoi(parse);
 
+	parse = strtok(NULL, " \n");
+	im_height = atoi(parse);
+
+	fgets(buf, 512, fptr);
+	parse = strtok(buf, " \n");
+	max_color = atoi(parse);
+	
+	im_size = im_width*im_height;
+	texture_bytes = (unsigned char*) calloc(3, im_size);
+	fread(texture_bytes,3,im_size, fptr);
+	fclose(fptr);
+
+	glBindTexture(GL_TEXTURE_2D, tid);
+	glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, im_width, im_height,0, GL_RGB,
+			GL_UNSIGNED_BYTE, texture_bytes);
+	if(p==1){
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	} else {
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	free(texture_bytes);
+}
 
 
 void view_volume()
@@ -130,15 +169,15 @@ void view_volume()
 void set_light()
 {
 	glLightfv(GL_LIGHT0,GL_POSITION,light0_position);
-	//~ float light0_ambient[] = {1.0,1.0,1.0,1.0};
-    //~ float light0_diffuse[] = {1.0,1.0,1.0,1.0};
-    //~ float light0_specular[] = {1.0,1.0,1.0,1.0};
-//~ 
-    //~ glLightfv(GL_LIGHT0,GL_AMBIENT,light0_ambient);
-    //~ glLightfv(GL_LIGHT0,GL_DIFFUSE,light0_diffuse);
-    //~ glLightfv(GL_LIGHT0,GL_SPECULAR,light0_specular);
-	//~ glEnable(GL_LIGHTING);
-	//~ glEnable(GL_LIGHT0);
+	float light0_ambient[] = {1.0,1.0,1.0,1.0};
+    float light0_diffuse[] = {1.0,1.0,1.0,1.0};
+    float light0_specular[] = {1.0,1.0,1.0,1.0};
+
+    glLightfv(GL_LIGHT0,GL_AMBIENT,light0_ambient);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,light0_diffuse);
+    glLightfv(GL_LIGHT0,GL_SPECULAR,light0_specular);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 }
 
 
@@ -198,10 +237,10 @@ void draw_teapot()
 {
 	int v, t, n;
 	glPushMatrix();
-	//glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHTING);
 	glUseProgram(p);
 	glRotatef(-90,0.0,1.0,0.0);
-	glTranslatef(0.0,-0.5,0.0);
+	glTranslatef(0.0,-0.02,0.0);
 
 
 	glBegin(GL_QUADS);
@@ -221,6 +260,50 @@ void draw_teapot()
 	glPopMatrix();
 }
 
+void draw_plane()
+{
+	glStencilFunc(GL_ALWAYS,1,0xff);  
+    glStencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);  
+	glDepthMask(GL_FALSE);  
+	glDisable(GL_LIGHTING);
+	float mytexcoords[4][2] = {{0.0,1.0},{1.0,1.0},{1.0,0.0},{0.0,0.0}};
+        
+        float surface[4][3]= {
+		{-2.0, -0.0, -2.0},
+		{2.0, -0.0, -2.0},
+		{2.0, -0.0, 3.0},
+		{-2.0, -0.0, 3.0},
+	};
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+	glUseProgram(0);
+	
+	glBegin(GL_QUADS);
+	glNormal3f(0.0, 1.0, 0.0);
+	for (int k=0; k<4; k++) {
+		glTexCoord2fv(mytexcoords[k]);
+		glVertex3fv(surface[k]);
+	}
+	glEnd();
+	//glDisable(GL_TEXTURE_2D);
+	glEnable(GL_LIGHTING);
+	glDepthMask(GL_TRUE); 
+	glStencilFunc(GL_EQUAL,1,0xff);  
+    	glStencilFunc(GL_KEEP,GL_KEEP,GL_KEEP); 
+	
+	glPushMatrix();  
+    	glScalef(1.0,-1.0,1.0);  
+
+    	//glutSolidTeapot(1);  
+        glActiveTexture(GL_TEXTURE1);
+        load_texture("textures/skyenv_r.ppm", 2);
+        glLightfv(GL_LIGHT0,GL_POSITION,light0_position_r);	
+        draw_teapot();
+    	glPopMatrix();  
+		glLightfv(GL_LIGHT0,GL_POSITION,light0_position);	
+    	glDisable(GL_STENCIL_TEST);  	
+}
+
 void draw() { 
 
 	glEnable(GL_DEPTH_TEST);
@@ -232,7 +315,13 @@ void draw() {
 	draw_backgroud();
 	glPushMatrix();
 	jitter_model();
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE1);
+    load_texture("textures/skyenv.ppm", 2);
+        
 	draw_teapot();
+	
+	draw_plane();
 	glAccum(GL_ACCUM,1.0/(float)(VPASSES));
 	glPopMatrix();
 	}
@@ -267,45 +356,7 @@ unsigned int set_shaders(const char* vert,const char* frag) {
 
 
 
-void load_texture(char* filename, int tid, int p=0) {
-	FILE* fptr;
-	char buf[512], *parse;
-	int im_size, im_width, im_height, max_color;
-	unsigned char* texture_bytes;
-	fptr=fopen(filename, "r");
-	if (fptr==NULL) cout<<"fptr_NULL"<<endl;
-	fgets(buf,512,fptr);
-	do {    	
-		fgets(buf,512,fptr);
-	} while (buf[0]=='#');
-	if (buf==NULL) cout<<"buf_NULL"<<endl;
-	parse = strtok(buf, " \t");
-	im_width = atoi(parse);
 
-	parse = strtok(NULL, " \n");
-	im_height = atoi(parse);
-
-	fgets(buf, 512, fptr);
-	parse = strtok(buf, " \n");
-	max_color = atoi(parse);
-	
-	im_size = im_width*im_height;
-	texture_bytes = (unsigned char*) calloc(3, im_size);
-	fread(texture_bytes,3,im_size, fptr);
-	fclose(fptr);
-
-	glBindTexture(GL_TEXTURE_2D, tid);
-	glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, im_width, im_height,0, GL_RGB,
-			GL_UNSIGNED_BYTE, texture_bytes);
-	if(p==1){
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	} else {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}
-	free(texture_bytes);
-}
 
 void set_uniform(int p)
 {
@@ -342,7 +393,7 @@ void set_textures()
 int main (int argc, char**argv) {
 	
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_ACCUM);
+	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_ACCUM|GLUT_STENCIL);
 	glutInitWindowSize(720,720);
 	glutInitWindowPosition(100,50);
 	glutCreateWindow("my_cool_teapot");        
